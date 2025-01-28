@@ -1,0 +1,50 @@
+#define TRIG_PIN 7
+#define ECHO_PIN 6
+
+#include <SoftwareSerial.h>
+#include <TinyGPS++.h>
+
+SoftwareSerial gpsSerial(8,9);
+
+TinyGPSPlus gps;
+
+long dist, time;
+long thresh = 5.00;
+
+void setup(){
+  gpsSerial.begin(9600);
+  Serial.begin(9600);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  Serial.println("starting ultra-gps!!");
+}
+
+void loop(){
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(5);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  time = pulseIn(ECHO_PIN, HIGH, 30000);
+  dist = time * 0.034 / 2;
+
+  while(dist > thresh){
+    while(gpsSerial.available() > 0){
+      if(gps.encode(gpsSerial.read())){
+        if(gps.location.isUpdated()){
+          double lat = gps.location.lat();
+          double lng = gps.location.lng();
+          Serial.print("Lat: ");
+          Serial.println(lat, 6);
+          Serial.print("Longit: ");
+          Serial.println(lng, 6);
+        }
+      }
+    }
+  }
+
+  delay(500);
+}
